@@ -120,3 +120,21 @@ Khalid-Tech-OS/
 - Default: English
 - Switch to Arabic if I write in Arabic
 - Technical terms stay in English even in Arabic context
+
+---
+
+## Git Conventions
+
+**Repository:** https://github.com/khdmohamed/Khalid-Tech-OS
+
+**Commit Messages:**
+- NEVER include `Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>` or any AI attribution
+- This is a company repository — commits should appear to be from Khalid only
+- Keep messages concise, summarize what changed
+
+**Workflow:**
+```
+git add .
+git commit -m "Brief description"
+git push
+```
