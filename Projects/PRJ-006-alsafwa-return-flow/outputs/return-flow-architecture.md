@@ -1,7 +1,7 @@
 # Return Flow Architecture — Alsafwa (Reverto App)
 
 **Project:** PRJ-006
-**Date:** 2026-04-01
+**Date:** 2026-04-02 (Updated)
 **App:** Reverto (Shopify Returns & Exchanges)
 
 ---
@@ -23,6 +23,75 @@
 
 ---
 
+## Complete Return Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         PHASE 1: RETURN REQUEST                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. Customer → My Orders → Request Return                                    │
+│  2. Select item(s) → Select reason (NO "Item is Damaged")                    │
+│  3. Modal: "SAR 22 return shipping fee will be charged"                     │
+│  4. Customer agrees → Checkout → Pays SAR 22                                │
+│  5. Return request created (status: REQUESTED)                              │
+│  6. Tracking available in My Orders                                         │
+│                                                                              │
+│  → SAR 22 covers: Shipping FROM customer TO warehouse                       │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         PHASE 2: WAREHOUSE PROCESSING                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. Warehouse receives returned item                                       │
+│  2. Warehouse inspects item in Reverto                                      │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  OPTION A: APPROVED                                                 │    │
+│  ├─────────────────────────────────────────────────────────────────────┤    │
+│  │  1. Warehouse marks: Approved                                      │    │
+│  │  2. Customer receives: Approval email + "Approved" badge in Orders  │    │
+│  │  3. Refund processed: (Order amount - SAR 22 shipping fee)         │    │
+│  │  4. Warehouse keeps/disposes item                                  │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  OPTION B: REJECTED                                                 │    │
+│  ├─────────────────────────────────────────────────────────────────────┤    │
+│  │  1. Warehouse marks: Rejected + enters remarks                     │    │
+│  │  2. Customer sees in My Orders:                                     │    │
+│  │     - "Rejected" badge (red)                                       │    │
+│  │     - Rejection reason/remarks                                     │    │
+│  │     - Message: "Do you want this item back?"                       │    │
+│  │     - [Pay SAR 22] button to ship back                            │    │
+│  │  3. Customer chooses:                                              │    │
+│  │     - No action → Warehouse disposes item                         │    │
+│  │     - Clicks [Pay SAR 22] → Pays → Item shipped back              │    │
+│  │                                                                      │    │
+│  │  → SAR 22 covers: Shipping FROM warehouse TO customer                │    │
+│  │                                                                      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Fee Structure
+
+| Scenario | Fee | When Paid | Covers |
+|---|---|---|---|
+| Return request | SAR 22 | At request (before warehouse) | Shipping → Warehouse |
+| Return approved | SAR 0 | Already paid | Deducted from refund |
+| Return rejected + item wanted back | SAR 22 | After rejection | Shipping → Customer |
+| Return rejected + item not wanted | SAR 0 | - | Disposal |
+
+**Summary:** Customer pays **once or twice** depending on warehouse decision.
+
+---
+
 ## Reverto App — Key Configuration Areas
 
 ### 1. Return Fee Configuration
@@ -32,35 +101,19 @@
 | Setting | Value | Notes |
 |---|---|---|
 | Return Fee Type | Flat Fee | SAR 22 per return |
-| Fee Deduction | From Refund | Deducted from final refund amount |
-| Minimum Return Value | SAR 100 | Client proposal (pending approval) |
-| Restocking Fee | SAR 22 | Outbound shipping cost recovery |
-
-**Fee Logic:**
-```
-Total Deduction = SAR 22 (outbound) + SAR 22 (return) = SAR 44
-If (Refund Amount < SAR 44) → Customer pays difference
-Net Refund = (Order Total - SAR 44) - Any other deductions
-```
+| Fee Collection | At time of return request | Before warehouse receives |
+| Fee Refundable | ❌ No | Non-refundable |
+| Minimum Return Value | ❌ None | Per client (no minimum) |
 
 ### 2. Return Policy Acceptance
-
-**Location:** Reverto Admin → Settings → Return Policy
 
 | Setting | Configuration |
 |---|---|
 | Policy Acceptance Required | ✅ Enabled |
-| Acceptance Point 1 | Before Return Request Submission |
-| Acceptance Point 2 | Checkout (via Liquid customization) |
+| Acceptance Point | Before Return Request Submission |
 | Policy Display | Modal/Dialog checkbox "I agree to Return Policy" |
 
-**Implementation:**
-- Reverto handles return page policy acceptance (built-in)
-- Checkout policy requires Liquid theme edit (custom)
-
 ### 3. Return Reasons
-
-**Location:** Reverto Admin → Settings → Return Reasons
 
 | Reason | Enabled | Action |
 |---|---|---|
@@ -71,48 +124,10 @@ Net Refund = (Order Total - SAR 44) - Any other deductions
 
 ### 4. Warehouse Actions
 
-**Location:** Reverto Admin → Returns Management
-
 | Action | Trigger | Customer Notification |
 |---|---|---|
-| Approve | Warehouse receives + inspects | Email + My Orders status |
-| Reject | Warehouse finds issue | Email + My Orders + Remarks |
-| Request Payment | Rejected return | Pay button appears (SAR 22) |
-
----
-
-## Return Flow — Step by Step
-
-### Phase 1: Customer Initiates Return
-
-```
-1. Customer → My Orders → Request Return
-2. Select item(s) → Select reason (NO "Item is Damaged")
-3. Redirect: Return Policy page (Reverto)
-4. Checkbox: "I accept the Return Policy"
-5. Click: Continue → Pay Return Fee
-6. Payment Gateway: Process SAR 22
-7. Success → Return Order Created
-8. Tracking: Available in My Orders
-```
-
-### Phase 2: Warehouse Processing
-
-```
-9. Warehouse receives item
-10. Scan/lookup return order in Reverto
-11. Inspection:
-    ├─ APPROVED → Mark as Approved
-    │              └─ Trigger: Approval email
-    │              └─ Update: My Orders "Approved"
-    │              └─ Process: Refund minus SAR 44
-    │
-    └─ REJECTED → Enter rejection remarks
-                   └─ Trigger: Rejection email with remarks
-                   └─ Update: My Orders "Rejected" + remarks
-                   └─ Action: Pay button appears (SAR 22 again)
-                   └─ Customer pays → Item shipped back
-```
+| Approve | Warehouse receives + approves | Email + My Orders badge |
+| Reject | Warehouse rejects + remarks | Email + My Orders + remarks + Pay button |
 
 ---
 
@@ -143,88 +158,95 @@ Net Refund = (Order Total - SAR 44) - Any other deductions
 | Return Rejected | ✅ | Custom: includes remarks |
 | Payment Required | ✅ | Custom: link to pay |
 
-### Settings → Integrations
-
-| Integration | Status |
-|---|---|
-| Shopify | ✅ Connected |
-| Business Central | ⚠️ Configure webhooks |
-| Payment Gateway | ✅ Use store gateway |
-
 ---
 
-## Data Flow — Shopify ↔ BC
+## Theme Implementation: Rejected Return Display
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        RETURN CREATION                           │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Customer submits return in Reverto (Shopify)                │
-│  2. Reverto creates:                                            │
-│     - Shopify Return Order (refund_pending)                     │
-│     - Return Record in Reverto DB                               │
-│  3. Webhook → BC: Return Order created                          │
-│  4. BC: Reserve inventory (expected return)                     │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                      WAREHOUSE RECEIPT                          │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Warehouse scans item → BC Item Ledger Entry (return)       │
-│  2. BC → Reverto webhook: Item received                         │
-│  3. Warehouse marks Approved/Rejected in Reverto                │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                       REFUND PROCESSING                          │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Approved: Reverto triggers refund via Shopify               │
-│  2. Shopify calculates: (Order Total - SAR 44 - Discounts)      │
-│  3. Shopify → Payment Gateway: Process refund                   │
-│  4. Webhook → BC: Refund posted                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Shopify Liquid — Checkout Policy Dialog
-
-**File:** `sections/checkout.liquid` or `theme.liquid`
+**File:** `sections/main-order.liquid`
 
 ```liquid
-{% comment %} Return Policy Acceptance at Checkout {% endcomment %}
+{% comment %} Check for rejected return {% endcomment %}
+{% assign return_rejected = false %}
+{% assign rejection_reason = '' %}
+
+{% if order.metafields.return.status == 'rejected' %}
+  {% assign return_rejected = true %}
+  {% assign rejection_reason = order.metafields.return.rejection_reason %}
+{% endif %}
+
+{% comment %} Display rejected return section {% endcomment %}
+{% if return_rejected %}
+  <div class="return-rejected-notice" style="margin: 2rem 0; padding: 1.5rem; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px;">
+    <h4 style="color: #721c24;">
+      <span class="order-status-badge status-rejected">Return Rejected</span>
+    </h4>
+
+    {% if rejection_reason != blank %}
+      <p style="color: #721c24;"><strong>Reason:</strong> {{ rejection_reason }}</p>
+    {% endif %}
+
+    <p style="color: #721c24;">
+      Do you want this item shipped back to you? Please pay the shipping cost.
+    </p>
+
+    <button onclick="payReturnShipping('{{ order.id }}')" class="action-button btn-warning">
+      Pay SAR 22 for Return Shipping
+    </button>
+
+    <p style="color: #721c24; font-size: 0.9em; margin-top: 1rem;">
+      Your item will be shipped to your address after payment.
+    </p>
+  </div>
+{% endif %}
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const checkoutBtn = document.querySelector('[name="checkout"]');
-  const policyCheckbox = document.getElementById('return-policy-agree');
+function payReturnShipping(orderId) {
+  var returnFeeProductId = {{ return_shipping_fee_variant_id }};
 
-  if (checkoutBtn && policyCheckbox) {
-    checkoutBtn.addEventListener('click', function(e) {
-      if (!policyCheckbox.checked) {
-        e.preventDefault();
-        alert('Please accept the Return Policy to proceed');
-        return false;
+  fetch('/cart/add.js', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      items: [{ id: returnFeeProductId, quantity: 1 }],
+      attributes: {
+        'Return Shipping For Order': '{{ order.order_number }}',
+        'Return Shipping Type': 'Rejected Return - Ship Back'
       }
-    });
-  }
-});
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    sessionStorage.setItem('returnShippingForOrder', '{{ order.id }}');
+    window.location.href = '/checkout';
+  });
+}
 </script>
+```
 
-<div class="return-policy-dialog" style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
-  <h4>{{ 'Return Policy' | t }}</h4>
-  <p>{{ 'Returns are subject to a SAR 22 fee per item. Minimum return order value: SAR 100.' | t }}</p>
-  <a href="/pages/return-policy" target="_blank">{{ 'View full policy' | t }}</a>
-  <label style="display: flex; align-items: center; margin-top: 10px;">
-    <input type="checkbox" id="return-policy-agree" name="return_policy_agree" required>
-    <span style="margin-left: 8px;">{{ 'I have read and agree to the Return Policy' | t }}</span>
-  </label>
-</div>
+---
 
-{% comment %} Display return fee at checkout {% endcomment %}
-<div class="checkout-return-fee-info" style="font-size: 0.9em; color: #666;">
-  {{ 'Note: A SAR 22 return shipping fee applies to all returns.' | t }}
-</div>
+## Return Status Badges
+
+```liquid
+{% comment %} Add to order title area {% endcomment %}
+{% if order.metafields.return.status %}
+  <span class="order-status-badge status-{{ order.metafields.return.status }}">
+    {% case order.metafields.return.status %}
+      {% when 'requested' %}Return Requested
+      {% when 'approved' %}Return Approved
+      {% when 'rejected' %}Return Rejected
+      {% when 'shipped_back' %}Shipped Back
+    {% endcase %}
+  </span>
+{% endif %}
+```
+
+**CSS:**
+```css
+.status-requested { background: #d1ecf1; color: #0c5460; }
+.status-approved { background: #d4edda; color: #155724; }
+.status-rejected { background: #f8d7da; color: #721c24; }
+.status-shipped_back { background: #fff3cd; color: #856404; }
 ```
 
 ---
@@ -251,23 +273,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
 ---
 
-## Open Questions
+## Data Flow — Shopify ↔ BC
 
-| Question | Impact | Status |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        RETURN CREATION                           │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Customer pays SAR 22 → Return request created              │
+│  2. Reverto creates:                                            │
+│     - Shopify Return Order (refund_pending)                     │
+│     - Return Record in Reverto DB                               │
+│  3. Webhook → BC: Return Order created                          │
+│  4. BC: Reserve inventory (expected return)                     │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                      WAREHOUSE RECEIPT                          │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Warehouse scans item → BC Item Ledger Entry (return)       │
+│  2. BC → Reverto webhook: Item received                         │
+│  3. Warehouse marks Approved/Rejected in Reverto                │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                       REFUND PROCESSING                          │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Approved: Reverto triggers refund via Shopify               │
+│  2. Shopify calculates: (Order Total - SAR 22 - Discounts)     │
+│  3. Shopify → Payment Gateway: Process refund                   │
+│  4. Webhook → BC: Refund posted                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Decisions Log
+
+| Date | Decision | Status |
 |---|---|---|
-| SAR 44 deduction model approval? | Determines if payment required upfront | Pending client |
-| Minimum return order SAR 100? | Prevents low-value returns | Pending client |
-| Checkout policy dialog location? | Theme customization required | To be confirmed |
-| BC webhook for return sync? | Inventory visibility | To be configured |
+| 2026-04-01 | Return fee: SAR 22 flat charge | ✅ Confirmed |
+| 2026-04-01 | Remove "Item is Damaged" return reason | ✅ Confirmed |
+| 2026-04-02 | SAR 44 deduction model: REJECTED | ✅ Client chose original flow |
+| 2026-04-02 | Minimum return order: NO restriction | ✅ Confirmed |
+| 2026-04-02 | Payment at return request (upfront) | ✅ Confirmed |
+| 2026-04-02 | Rejected return: Pay again to ship back | ✅ Confirmed |
+
+---
+
+## Scope Dispute
+
+| Item | Client Position | Techasus Position | Status |
+|---|---|---|---|
+| Checkout policy dialog + return fee display | IN SCOPE | OUT OF SCOPE (custom dev) | **OPEN** |
 
 ---
 
 ## Next Steps
 
-1. ✅ Confirm SAR 44 deduction model with client
-2. ⏳ Configure Reverto fee settings (SAR 22)
-3. ⏳ Remove "Item is Damaged" return reason
-4. ⏳ Configure notification templates (Arabic/English)
-5. ⏳ Implement checkout policy dialog (Liquid)
-6. ⏳ Set up BC webhooks for return sync
-7. ⏳ Test full return flow (UAT)
+| # | Task | Status |
+|---|---|---|
+| 1 | Configure Reverto fee settings (SAR 22 at request) | ⬜ Pending |
+| 2 | Remove "Item is Damaged" return reason | ⬜ Pending |
+| 3 | Configure notification templates (Arabic/English) | ⬜ Pending |
+| 4 | Implement return fee modal at request | ⬜ Pending |
+| 5 | Implement rejected return display + pay button | ⬜ Pending |
+| 6 | Set up BC webhooks for return sync | ⬜ Pending |
+| 7 | Test full return flow (UAT) | ⬜ Pending |
