@@ -27,10 +27,10 @@
 - Urgent go-live timeline — all pending items must be complete
 
 ## Contacts
-| Role | Name | Email |
-|---|---|---|
-| Client Lead | Tahir | tahir@alsafwahar.com |
-| CEO Office | CEO Office | ceo.office@alsafwahar.com |
-| Team | Mohammed Al-Khunfari | mohammed@alsafwahar.com |
-| Team | Ahmed Abdulhamid | ahmed@alsafwahar.com |
-| Techasus PM | Abdallah Tawfik | - |
+| Role        | Name                 | Email                     |
+| ----------- | -------------------- | ------------------------- |
+| Client Lead | Tahir                | tahir@alsafwahar.com      |
+| CEO Office  | CEO Office           | ceo.office@alsafwahar.com |
+| Team        | Mohammed Al-Khunfari | mohammed@alsafwahar.com   |
+| Team        | Ahmed Abdulhamid     | ahmed@alsafwahar.com      |
+| Techasus PM | Abdallah Tawfik      | -                         |
