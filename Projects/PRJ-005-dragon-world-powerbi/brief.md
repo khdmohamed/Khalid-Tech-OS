@@ -26,10 +26,10 @@ Integrate Power BI with Dragon World ERP system for reporting and analytics.
 - [ ] Power BI reports deployed
 
 ## Key Contacts
-| Role | Name | Contact |
-|---|---|---|
-| Client Lead | Muhammad Sheeraz | muhammad.s@newdragonksa.com |
-| Client Team | Abdallah Tawfik | - |
-| Client Team | Khalid Mohamed | - |
-| Client Team | Ayman | ayman.s@newdragonksa.com |
-| Client Team | Fouad Aman | fouad@newdragonksa.com, f.aman@dragonworld.sa |
+| Role        | Name             | Contact                                       |
+| ----------- | ---------------- | --------------------------------------------- |
+| Client Lead | Muhammad Sheeraz | muhammad.s@newdragonksa.com                   |
+| Techasus    | Abdallah Tawfik  | -                                             |
+| Techasus    | Khalid Mohamed   | -                                             |
+| Client Team | Ayman            | ayman.s@newdragonksa.com                      |
+| Client Team | Fouad Aman       | fouad@newdragonksa.com, f.aman@dragonworld.sa |

@@ -12,6 +12,7 @@
 
 ## Active Projects
 - PRJ-006 — Return Flow & Checkout Completion (go-live blocker)
+- PRJ-007 — Order Status Analysis (completed)
 - Shopify–LS Central integration (sync, pricing, inventory)
 - ZATCA-compliant tax-inclusive pricing
 - Arabic RTL theme development

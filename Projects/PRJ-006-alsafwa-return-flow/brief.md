@@ -33,10 +33,10 @@ Complete remaining online store deliverables for go-live: return flow with payme
 - [ ] UAT + go-live
 
 ## Key Contacts
-| Role | Name | Contact |
-|---|---|---|
-| Client Lead | Tahir | tahir@alsafwahar.com |
-| CEO Office | CEO Office | ceo.office@alsafwahar.com |
-| Team | Mohammed Al-Khunfari | mohammed@alsafwahar.com |
-| Team | Ahmed Abdulhamid | ahmed@alsafwahar.com |
-| Techasus PM | Abdallah Tawfik | - |
+| Role         | Name                 | Contact                   |
+| ------------ | -------------------- | ------------------------- |
+| Client Lead  | Tahir                | tahir@alsafwahar.com      |
+| CEO Office   | CEO Office           | ceo.office@alsafwahar.com |
+| Team         | Mohammed Al-Khunfari | mohammed@alsafwahar.com   |
+| Team         | Ahmed Abdulhamid     | ahmed@alsafwahar.com      |
+| Techasus CEO | Abdallah Tawfik      | -                         |
